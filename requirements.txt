@@ -1,0 +1,27 @@
+# ====================================================================
+# PIPELINE CONFIGURATION: PACKAGE REQUIREMENTS
+# ENVIRONMENT: Python 3.10+
+# ====================================================================
+
+# Database Connections (Supabase/PostgreSQL Engine Integration)
+psycopg2-binary==2.9.9
+
+# Alternative Modern DB Wrapper (Optional for asynchronous operations)
+supabase==2.6.0
+
+# Automated Verification & Testing Matrix Layers
+pytest==8.2.2
+
+# Performance Utilities & Scraper Safeguards
+python-dateutil==2.9.0.post0
+
+# Saved credentials for services in the env 
+python-dotenv==0.15.0
+
+# Api calls requests package needed
+requests==2.32.3
+
+# JSON
+beautifulsoup4==4.12.3
+
+psycopg2-binary==2.9.9ls

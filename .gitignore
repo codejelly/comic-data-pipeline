@@ -1,0 +1,15 @@
+# Runtime output (logs, caches, browser artifacts)
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# Environment
+.env
+.venv/
+__pycache__/
+.env
+*.pyc
