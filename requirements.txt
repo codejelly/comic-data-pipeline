@@ -11,6 +11,7 @@ supabase==2.6.0
 
 # Automated Verification & Testing Matrix Layers
 pytest==8.2.2
+ruff==0.9.6
 
 # Performance Utilities & Scraper Safeguards
 python-dateutil==2.9.0.post0
@@ -23,5 +24,6 @@ requests==2.32.3
 
 # JSON
 beautifulsoup4==4.12.3
+sqlalchemy==2.0.51
 
-psycopg2-binary==2.9.9ls
+psycopg2-binary==2.9.9
