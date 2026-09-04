@@ -1,28 +1,33 @@
 # src/parse/classifier.py
 import re
 
+
 def categorize_variant_string(title_string: str) -> str:
     """
-    Fallback regex pattern-matching engine. Parses crowdsourced text strings 
+    Fallback regex pattern-matching engine. Parses crowdsourced text strings
     when hidden metadata dropdown flags are missing or unpopulated.
     """
     if not title_string:
         return "MAIN_RELEASE"
-        
+
     text = title_string.lower().strip()
-    
+
     # 1. RULE 1: Ratio Incentive Detection
-    if re.search(r'\b1\s*(:|in|-in)\s*\d+', text) or "ratio" in text or "incentive" in text:
+    if (
+        re.search(r"\b1\s*(:|in|-in)\s*\d+", text)
+        or "ratio" in text
+        or "incentive" in text
+    ):
         return "RATIO_INCENTIVE"
-        
+
     # 2. RULE 2: Dynamic Format Overrides (Annuals/Specials)
     if "annual" in text or "giant-size" in text or "one-shot" in text:
         return "ANNUAL_ONE_SHOT"
-        
+
     # 3. RULE 3: Retailer / Store Exclusives
     if "exclusive" in text or "unknown comics" in text or "616" in text:
         return "STORE_EXCLUSIVE"
-        
+
     # 4. RULE 4: Special Format Open-Orders
     if "printing" in text or "reprint" in text:
         return "LATER_PRINTING"
@@ -32,17 +37,17 @@ def categorize_variant_string(title_string: str) -> str:
         return "BLANK_SKETCH"
 
     # 5. RULE 5: Standard Alphabetical Variants (B, C, D)
-    if re.search(r'\b(cover|variant)?\s*b\b|\bb\s*(cover|variant)?\b', text):
+    if re.search(r"\b(cover|variant)?\s*b\b|\bb\s*(cover|variant)?\b", text):
         return "STANDARD_VARIANT_B"
-    if re.search(r'\b(cover|variant)?\s*c\b|\bc\s*(cover|variant)?\b', text):
+    if re.search(r"\b(cover|variant)?\s*c\b|\bc\s*(cover|variant)?\b", text):
         return "STANDARD_VARIANT_C"
-    if re.search(r'\b(cover|variant)?\s*d\b|\bd\s*(cover|variant)?\b', text):
+    if re.search(r"\b(cover|variant)?\s*d\b|\bd\s*(cover|variant)?\b", text):
         return "STANDARD_VARIANT_D"
-        
+
     # 6. Default Fallback if it matches main book terminology
     if text in ["cover a", "main", "regular", "regular cover", ""]:
         return "MAIN_RELEASE"
-        
+
     return "UNKNOWN_OPEN_ORDER_VARIANT"
 
 
@@ -89,7 +94,11 @@ def dynamic_issue_classifier(metadata: dict, title: str) -> str:
         return "RATIO_INCENTIVE"
     if "reprint" in hidden_type or hidden_type == "reprint":
         return "LATER_PRINTING"
-    if "retailer exclusive" in hidden_type or "store" in hidden_type or "exclusive" in hidden_type:
+    if (
+        "retailer exclusive" in hidden_type
+        or "store" in hidden_type
+        or "exclusive" in hidden_type
+    ):
         return "STORE_EXCLUSIVE"
 
     # ─────────────────────────────────────────────────────────────────
@@ -97,12 +106,18 @@ def dynamic_issue_classifier(metadata: dict, title: str) -> str:
     # ── Handles missing/unreliable metadata via Regex on cover_info & title
     # ─────────────────────────────────────────────────────────────────
     text_tier_from_info = categorize_variant_string(cover_info)
-    if text_tier_from_info != "MAIN_RELEASE" and text_tier_from_info != "UNKNOWN_OPEN_ORDER_VARIANT":
+    if (
+        text_tier_from_info != "MAIN_RELEASE"
+        and text_tier_from_info != "UNKNOWN_OPEN_ORDER_VARIANT"
+    ):
         return text_tier_from_info
 
     if hidden_type:
         text_tier_from_type = categorize_variant_string(hidden_type)
-        if text_tier_from_type != "MAIN_RELEASE" and text_tier_from_type != "UNKNOWN_OPEN_ORDER_VARIANT":
+        if (
+            text_tier_from_type != "MAIN_RELEASE"
+            and text_tier_from_type != "UNKNOWN_OPEN_ORDER_VARIANT"
+        ):
             return text_tier_from_type
 
     # ─────────────────────────────────────────────────────────────────
