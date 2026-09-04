@@ -29,7 +29,10 @@ def record_sample_html_data(url: str, output_path: Union[str, Path]):
 if __name__ == "__main__":
     TARGET_URL = "https://leagueofcomicgeeks.com/comics/new-comics/2026/07/29"
     FIXTURE_DESTINATION = (
-        Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "sample_issue_list.html"
+        Path(__file__).resolve().parents[1]
+        / "tests"
+        / "fixtures"
+        / "sample_issue_list.html"
     )
     print(FIXTURE_DESTINATION)
 

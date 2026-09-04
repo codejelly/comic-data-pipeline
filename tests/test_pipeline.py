@@ -62,10 +62,13 @@ def test_pipeline_classification_and_cascade_logic(mock_db):
 
     iso_release_date = street_datetime.date().isoformat()
 
-    cursor.execute("""
+    cursor.execute(
+        """
         INSERT INTO issue_master (series_id, issue_number, sort_order, type, status, street_date, publisher)
         VALUES (11, 'Avengers: Armageddon #2', 2.0, 'MAIN_RELEASE', 'RELEASED', ?, 'Marvel Comics')
-    """, (iso_release_date,))
+    """,
+        (iso_release_date,),
+    )
     parent_id = cursor.lastrowid
 
     raw_title = "Avengers: Armageddon #2"
@@ -75,16 +78,30 @@ def test_pipeline_classification_and_cascade_logic(mock_db):
 
     calculated_days_delta = (street_datetime.date() - today_utc.date()).days
 
-    cursor.execute("""
+    cursor.execute(
+        """
         INSERT INTO issue_variants (
             master_issue_id, locg_issue_id, variant_type, cover_info,
             retail_price, image_url, current_pull_count, days_to_street_date
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """, (parent_id, 3773849, assigned_tier, raw_cover_text, 4.99,
-          "https://s3.amazonaws.com/comicgeeks/covers/medium-3773849.jpg", 10408, calculated_days_delta))
+    """,
+        (
+            parent_id,
+            3773849,
+            assigned_tier,
+            raw_cover_text,
+            4.99,
+            "https://s3.amazonaws.com/comicgeeks/covers/medium-3773849.jpg",
+            10408,
+            calculated_days_delta,
+        ),
+    )
     mock_db.commit()
 
-    cursor.execute("SELECT publisher, street_date FROM issue_master WHERE master_issue_id = ?", (parent_id,))
+    cursor.execute(
+        "SELECT publisher, street_date FROM issue_master WHERE master_issue_id = ?",
+        (parent_id,),
+    )
     row = cursor.fetchone()
     assert row[0] == "Marvel Comics"
     assert row[1] == iso_release_date
@@ -92,7 +109,9 @@ def test_pipeline_classification_and_cascade_logic(mock_db):
     cursor.execute("DELETE FROM issue_master WHERE master_issue_id = ?", (parent_id,))
     mock_db.commit()
 
-    cursor.execute("SELECT COUNT(*) FROM issue_variants WHERE master_issue_id = ?", (parent_id,))
+    cursor.execute(
+        "SELECT COUNT(*) FROM issue_variants WHERE master_issue_id = ?", (parent_id,)
+    )
     assert cursor.fetchone()[0] == 0
 
 
@@ -128,7 +147,10 @@ def test_harvester_full_extraction_behavior():
     assert rec["publisher"] == "Marvel Comics"
     assert rec["cover_info"] == "Sukesha Ray Foil Virgin Variant"
     assert rec["retail_price"] == 4.99
-    assert rec["image_url"] == "https://s3.amazonaws.com/comicgeeks/covers/medium-3773849.jpg"
+    assert (
+        rec["image_url"]
+        == "https://s3.amazonaws.com/comicgeeks/covers/medium-3773849.jpg"
+    )
     assert rec["current_pull_count"] == 10408
 
     assert rec["release_date"] == "2026-07-15"

@@ -1,6 +1,7 @@
 import time
 from seleniumbase import Driver
 
+
 def fetch_comic_html_driver(target_url: str) -> str:
     """
     Launches an undetected, headless Chrome instance, expands all variant blocks,
@@ -9,12 +10,12 @@ def fetch_comic_html_driver(target_url: str) -> str:
     driver = Driver(uc=True, headless=True)
     try:
         driver.get(target_url)
-        
+
         # 1. Wait for the main list structure to be present
         driver.wait_for_element("#comic-list-block", timeout=10)
-        
+
         print("🤖 Expanding all comic variant panels...")
-        
+
         # 2. Click every variant expander
         driver.execute_script("""
             document.querySelectorAll('a.variant-toggle').forEach(button => {
@@ -23,12 +24,12 @@ def fetch_comic_html_driver(target_url: str) -> str:
                 }
             });
         """)
-        
+
         # Give variant DOM nodes 1 second to append
         time.sleep(1)
-        
+
         print("🖼️ Forcing lazy-loaded image swaps...")
-        
+
         # 3. Force all lazy images to reveal their true URLs instantly
         driver.execute_script("""
             document.querySelectorAll('img').forEach(img => {
@@ -39,7 +40,7 @@ def fetch_comic_html_driver(target_url: str) -> str:
                 }
             });
         """)
-        
+
         # 4. Scroll incrementally down the page to ensure IntersectionObservers fire
         driver.execute_script("""
             let totalHeight = 0;
@@ -54,10 +55,10 @@ def fetch_comic_html_driver(target_url: str) -> str:
                 }
             }, 100);
         """)
-        
+
         # Give the smooth scroll 2-3 seconds to finish reach the bottom
         time.sleep(3)
-        
+
         # 5. Extract the full expanded DOM
         html_content = driver.page_source
         return html_content
