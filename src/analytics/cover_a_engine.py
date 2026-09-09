@@ -70,7 +70,6 @@ def evaluate_cover_a_issue(
             "velocity_state": "INVALID_TIER",
             "is_early_breakout": False,
             "demand_tier": "UNFLAGGED",
-            "peak_spike_grade": "UNFLAGGED",
             "reason": "Filtered: Issue is a variant or ratio incentive.",
         }
 
@@ -82,7 +81,6 @@ def evaluate_cover_a_issue(
             "velocity_state": "INSUFFICIENT_DATA",
             "is_early_breakout": issue.get("is_early_breakout", False),
             "demand_tier": issue.get("demand_tier", "UNFLAGGED"),
-            "peak_spike_grade": issue.get("peak_spike_grade", "UNFLAGGED"),
             "reason": (
                 f"Insufficient snapshot history ({len(same_book_snapshots) if same_book_snapshots else 0}/2 "
                 "points required for timestamp delta)"
@@ -102,7 +100,6 @@ def evaluate_cover_a_issue(
             "velocity_state": "INSUFFICIENT_DATA",
             "is_early_breakout": issue.get("is_early_breakout", False),
             "demand_tier": issue.get("demand_tier", "UNFLAGGED"),
-            "peak_spike_grade": issue.get("peak_spike_grade", "UNFLAGGED"),
             "reason": str(err),
         }
 
@@ -148,9 +145,7 @@ def evaluate_cover_a_issue(
 
     # 7. FOC / solicitation-phase labeling
     days_to_street = issue.get("days_to_street_date")
-    persisted_tier = issue.get("demand_tier") or issue.get(
-        "peak_spike_grade", "UNFLAGGED"
-    )
+    persisted_tier = issue.get("demand_tier", "UNFLAGGED")
     demand_tier, velocity_state = determine_demand_tier(
         is_accelerating=is_accelerating_spike,
         is_raw_spike=is_raw_spike,
@@ -173,7 +168,6 @@ def evaluate_cover_a_issue(
         # Only true for early-in-solicitation momentum (>28 days out)
         "is_early_breakout": demand_tier == "EARLY_MOMENTUM",
         "demand_tier": demand_tier,
-        "peak_spike_grade": demand_tier,  # existing DB column until renamed
         "velocity_state": velocity_state,
         "days_to_street_date": days_to_street,
     }
