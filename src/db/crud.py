@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any
 
@@ -182,6 +182,37 @@ def fetch_recent_snapshots(
             "days_to_street_date": row.days_to_street_date,
         }
         for row in reversed(records)
+    ]
+
+
+def fetch_snapshots_by_date(
+    db_session: Session,
+    locg_issue_id: int,
+    lookback_days: int = 5,
+) -> list[dict[str, Any]]:
+    """
+    Fetches snapshots within an explicit time window in ascending chronological order.
+    Prefer this over index/limit slicing when computing time-based velocity.
+    """
+    cutoff = datetime.now(timezone.utc) - timedelta(days=lookback_days)
+    records = (
+        db_session.query(IssueSnapshot)
+        .filter(
+            IssueSnapshot.locg_issue_id == locg_issue_id,
+            IssueSnapshot.recorded_at >= cutoff,
+        )
+        .order_by(IssueSnapshot.recorded_at.asc())
+        .all()
+    )
+
+    return [
+        {
+            "locg_issue_id": row.locg_issue_id,
+            "recorded_at": row.recorded_at.isoformat(),
+            "pull_count": row.pull_count,
+            "days_to_street_date": row.days_to_street_date,
+        }
+        for row in records
     ]
 
 

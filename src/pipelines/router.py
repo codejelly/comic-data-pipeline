@@ -5,7 +5,7 @@ from typing import Any
 from src.analytics.cover_a_engine import evaluate_cover_a_issue
 from src.db.crud import (
     append_issue_snapshot,
-    fetch_recent_snapshots,
+    fetch_snapshots_by_date,
     upsert_master_issue,
     upsert_velocity_flags,
 )
@@ -30,8 +30,8 @@ def process_harvested_record(db_session, record: dict[str, Any]) -> None:
     upsert_master_issue(db_session, record)
     append_issue_snapshot(db_session, record)
 
-    # Fetch recent snapshots needed for velocity math (3D delta & 4-point accel)
-    snapshots = fetch_recent_snapshots(db_session, locg_id, limit=7)
+    # Fetch timed snapshot window for 72h velocity (not fragile index offsets)
+    snapshots = fetch_snapshots_by_date(db_session, locg_id, lookback_days=5)
 
     evaluation = None
 
@@ -41,7 +41,9 @@ def process_harvested_record(db_session, record: dict[str, Any]) -> None:
 
     # BRANCH A: Primary Cover A Issue #1 Debut Engine
     if record.get("is_primary_base_issue_one"):
-        evaluation = evaluate_cover_a_issue(issue=record, snapshots=snapshots)
+        evaluation = evaluate_cover_a_issue(
+            issue=record, same_book_snapshots=snapshots
+        )
 
     # BRANCH B: Incentive Ratio Variants (e.g., "1:25", "1:50")
     elif record.get("ratio"):
