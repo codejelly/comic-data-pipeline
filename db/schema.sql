@@ -15,8 +15,8 @@ CREATE TABLE IF NOT EXISTS issue_master (
     status             VARCHAR(30) NOT NULL DEFAULT 'UPCOMING',
     street_date        DATE NOT NULL,
     publisher          VARCHAR(100) NOT NULL DEFAULT 'Unknown',
-    created_at         TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at         TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    created_at         TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at         TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
     CONSTRAINT unique_series_release UNIQUE (series_id, sort_order)
 );
@@ -37,8 +37,8 @@ CREATE TABLE IF NOT EXISTS issue_variants (
     image_url           TEXT,                    
     current_pull_count  INTEGER NOT NULL DEFAULT 0,
     days_to_street_date INTEGER NOT NULL,    
-    created_at          TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at          TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    created_at          TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
     CONSTRAINT fk_master_issue 
         FOREIGN KEY (master_issue_id) 
@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS issue_snapshots (
     locg_issue_id       INTEGER NOT NULL,
     pull_count          INTEGER NOT NULL,
     days_to_street_date INTEGER NOT NULL,
-    recorded_at         TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    recorded_at         TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_snapshot_variant 
         FOREIGN KEY (locg_issue_id) 
@@ -82,7 +82,7 @@ CREATE TABLE IF NOT EXISTS issue_velocity_flags (
     is_early_breakout          BOOLEAN NOT NULL DEFAULT FALSE,
     demand_tier                VARCHAR(50) NOT NULL DEFAULT 'UNFLAGGED', -- EARLY_MOMENTUM, LATE_FOC_RUSH, etc.
     velocity_state             VARCHAR(50) NOT NULL DEFAULT 'STABLE', -- HOT_ACCELERATING, WATCH_*, STABLE
-    last_evaluated_at          TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    last_evaluated_at          TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_flags_variant 
         FOREIGN KEY (locg_issue_id) 
