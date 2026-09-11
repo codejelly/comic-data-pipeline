@@ -112,7 +112,7 @@ class IssueVelocityFlags(Base):
     delta_3d: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     acceleration_3d: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     is_early_breakout: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    peak_spike_grade: Mapped[str] = mapped_column(
+    demand_tier: Mapped[str] = mapped_column(
         String(50), nullable=False, default="UNFLAGGED"
     )
     velocity_state: Mapped[str] = mapped_column(String(50), nullable=False, default="STABLE")

@@ -129,19 +129,20 @@ def test_upsert_velocity_flags(db_session):
 
     evaluation = {
         "locg_issue_id": 7001,
-        "evaluation_mode": "EARLY_ISSUE_ONE_ACCELERATION",
+        "evaluation_mode": "DEBUT_ISSUE_VELOCITY",
         "current_pull_count": 1500,
         "delta_3d": 40,
         "acceleration_3d": 12,
         "manual_additions": 1500,
         "is_early_breakout": True,
-        "peak_spike_grade": "CLASS_A_BREAKOUT",
-        "velocity_state": "HOT_ACCELERATING",
+        "demand_tier": "EARLY_MOMENTUM",
+        "velocity_state": "WATCH_EARLY_VOLUME",
     }
     flags = upsert_velocity_flags(db_session, evaluation)
     stored = db_session.query(IssueVelocityFlags).filter_by(locg_issue_id=7001).one()
 
-    assert flags.velocity_state == "HOT_ACCELERATING"
+    assert flags.velocity_state == "WATCH_EARLY_VOLUME"
     assert stored.is_early_breakout is True
+    assert stored.demand_tier == "EARLY_MOMENTUM"
     assert stored.delta_3d == 40
     assert stored.net_growth_since_discovery == 1500

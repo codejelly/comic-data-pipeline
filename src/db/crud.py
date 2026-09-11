@@ -247,7 +247,7 @@ def upsert_velocity_flags(
         "delta_3d": int(evaluation.get("delta_3d") or 0),
         "acceleration_3d": int(evaluation.get("acceleration_3d") or 0),
         "is_early_breakout": bool(evaluation.get("is_early_breakout", False)),
-        "peak_spike_grade": str(evaluation.get("peak_spike_grade") or "UNFLAGGED"),
+        "demand_tier": str(evaluation.get("demand_tier") or "UNFLAGGED"),
         "velocity_state": str(evaluation.get("velocity_state") or "STABLE"),
         "last_evaluated_at": datetime.now(timezone.utc),
     }
