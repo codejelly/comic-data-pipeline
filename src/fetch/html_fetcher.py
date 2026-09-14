@@ -1,4 +1,8 @@
+from __future__ import annotations
+
 import time
+from typing import Any
+
 from seleniumbase import Driver
 
 
@@ -64,3 +68,27 @@ def fetch_comic_html_driver(target_url: str) -> str:
         return html_content
     finally:
         driver.quit()
+
+
+def open_uc_driver() -> Any:
+    """Shared undetected Chrome session for multi-page enrichment."""
+    return Driver(uc=True, headless=True)
+
+
+def fetch_issue_page_html(target_url: str, driver: Any | None = None) -> str:
+    """
+    Fetch a single LOCG issue detail page for series-id enrichment.
+
+    Pass an existing driver to reuse one browser across many Cover A visits.
+    """
+    owns_driver = driver is None
+    active = driver or open_uc_driver()
+    try:
+        active.get(target_url)
+        # Issue pages vary; wait for body then a brief settle for SPA/content.
+        active.wait_for_element("body", timeout=15)
+        time.sleep(1.5)
+        return active.page_source
+    finally:
+        if owns_driver:
+            active.quit()

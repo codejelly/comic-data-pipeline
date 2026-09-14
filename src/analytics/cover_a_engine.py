@@ -14,11 +14,11 @@ from src.parse.helpers import is_primary_base_issue_one
 def determine_demand_tier(
     is_accelerating: bool,
     is_raw_spike: bool,
-    days_to_street_date: int | None,
+    days_to_foc: int | None,
     current_tier: str = "UNFLAGGED",
 ) -> tuple[str, str]:
     """Assigns demand tier and velocity state based on mathematical triggers
-    and the solicitation timeline to avoid cold-start labeling bias.
+    and FOC proximity to avoid cold-start labeling bias.
 
     Issue number alone must not imply "early acceleration" — a debut issue
     discovered near FOC is a late-cycle rush, not early momentum.
@@ -26,19 +26,19 @@ def determine_demand_tier(
     if not (is_accelerating or is_raw_spike):
         return current_tier, "STABLE"
 
-    # Multi-window acceleration confirmed (independent of solicitation phase)
+    # Multi-window acceleration confirmed (independent of FOC phase)
     if is_accelerating:
         return "CONFIRMED_BREAKOUT", "HOT_ACCELERATING"
 
-    # Raw velocity: label by days-to-street / FOC proximity
-    if days_to_street_date is not None:
-        if days_to_street_date > 28:
+    # Raw velocity: label by days-to-FOC
+    if days_to_foc is not None:
+        if days_to_foc > 28:
             return "EARLY_MOMENTUM", "WATCH_EARLY_VOLUME"
-        if days_to_street_date >= 14:
+        if days_to_foc >= 14:
             return "MID_CYCLE_SURGE", "WATCH_MID_VOLUME"
         return "LATE_FOC_RUSH", "WATCH_LATE_VOLUME"
 
-    # Fallback if days_to_street_date is null/unpopulated
+    # Fallback if days_to_foc is null/unpopulated
     return "VELOCITY_SPIKE", "WATCH_ACTIVE_VOLUME"
 
 
@@ -52,7 +52,7 @@ def evaluate_cover_a_issue(
 
     - Issues #1-#3: debut-window math (pure timestamp velocity / acceleration).
     - Issues #4+: mid-series math (subscriber floor + manual additions).
-    - Solicitation phase (early / mid / late FOC) comes from days_to_street_date,
+    - FOC phase (early / mid / late) comes from days_to_foc,
       not from issue number — so cold starts near FOC are not called early accel.
     """
     locg_id = issue.get("locg_issue_id")
@@ -106,7 +106,7 @@ def evaluate_cover_a_issue(
     cfg = {**PULL_THRESHOLDS, **ACCELERATION_CONFIG, **(config or {})}
 
     # 4. Series-position math window (#1-#3 vs #4+)
-    # NOT "early in solicitation" — only debut vs mid-series scoring rules.
+    # NOT early-in-FOC-window — only debut vs mid-series scoring rules.
     is_issue_one = is_primary_base_issue_one(issue)
     sort_order = float(issue.get("sort_order", 1.0))
     is_debut_window = is_issue_one or (sort_order < 4.0)
@@ -143,13 +143,13 @@ def evaluate_cover_a_issue(
             and (manual_additions >= cfg["MIN_DELTA_3D"])
         )
 
-    # 7. FOC / solicitation-phase labeling
-    days_to_street = issue.get("days_to_street_date")
+    # 7. FOC-phase labeling
+    days_to_foc = issue.get("days_to_foc")
     persisted_tier = issue.get("demand_tier", "UNFLAGGED")
     demand_tier, velocity_state = determine_demand_tier(
         is_accelerating=is_accelerating_spike,
         is_raw_spike=is_raw_spike,
-        days_to_street_date=days_to_street,
+        days_to_foc=days_to_foc,
         current_tier=persisted_tier,
     )
 
@@ -165,9 +165,9 @@ def evaluate_cover_a_issue(
         "acceleration_3d": acceleration,
         "elapsed_hours": velocity.elapsed_hours,
         "baseline_pull_count": velocity.baseline_pulls,
-        # Only true for early-in-solicitation momentum (>28 days out)
+        # Only true for early-in-FOC-window momentum (>28 days out)
         "is_early_breakout": demand_tier == "EARLY_MOMENTUM",
         "demand_tier": demand_tier,
         "velocity_state": velocity_state,
-        "days_to_street_date": days_to_street,
+        "days_to_foc": days_to_foc,
     }

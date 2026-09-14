@@ -23,7 +23,7 @@ def base_issue():
         "publisher": "Marvel Comics",
         "data_parent": 0,
         "is_primary_base_issue_one": True,
-        "days_to_street_date": 35,
+        "days_to_foc": 35,
     }
 
 
@@ -54,7 +54,7 @@ def test_gap_detected_when_no_snapshot_near_72h(base_issue):
     assert "[GAP_DETECTED]" in result["reason"]
 
 
-def test_timestamp_delta_early_solicitation_labels_early_momentum(base_issue):
+def test_timestamp_delta_early_foc_window_labels_early_momentum(base_issue):
     same_book_snapshots = [
         {"recorded_at": _ts(3), "pull_count": 100, "locg_issue_id": 5001},
         {"recorded_at": _ts(2), "pull_count": 110, "locg_issue_id": 5001},
@@ -73,8 +73,8 @@ def test_timestamp_delta_early_solicitation_labels_early_momentum(base_issue):
 
 
 def test_debut_issue_near_foc_is_not_labeled_early_acceleration(base_issue):
-    # Cold start on an Issue #1 that is already close to FOC / street
-    base_issue["days_to_street_date"] = 5
+    # Cold start on an Issue #1 that is already close to FOC
+    base_issue["days_to_foc"] = 5
     same_book_snapshots = [
         {"recorded_at": _ts(3), "pull_count": 100, "locg_issue_id": 5001},
         {"recorded_at": _ts(0), "pull_count": 140, "locg_issue_id": 5001},
@@ -85,7 +85,7 @@ def test_debut_issue_near_foc_is_not_labeled_early_acceleration(base_issue):
     )
 
     assert result["evaluation_mode"] == "DEBUT_ISSUE_VELOCITY"  # series position
-    assert result["demand_tier"] == "LATE_FOC_RUSH"  # solicitation phase
+    assert result["demand_tier"] == "LATE_FOC_RUSH"  # FOC phase
     assert result["is_early_breakout"] is False
     assert result["velocity_state"] == "WATCH_LATE_VOLUME"
 
@@ -148,7 +148,7 @@ def test_mid_series_with_trailing_subscriber_floor():
         "sort_order": 13.0,
         "publisher": "Marvel Comics",
         "title": "Amazing Spider-Man #13",
-        "days_to_street_date": 20,
+        "days_to_foc": 20,
     }
 
     same_book_snapshots = [
@@ -185,7 +185,7 @@ def test_mid_series_fails_on_insignificant_manual_additions():
         "sort_order": 14.0,
         "publisher": "DC Comics",
         "title": "Batman #14",
-        "days_to_street_date": 10,
+        "days_to_foc": 10,
     }
 
     same_book_snapshots = [

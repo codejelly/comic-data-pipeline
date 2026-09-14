@@ -6,7 +6,7 @@ from src.parse.comic_parser import parse_comic_harvester_loop
 def make_mock_issue_html(
     title: str,
     cover_info: str = None,
-    release_epoch: int = 1785297600,
+    foc_epoch: int = 1785297600,
 ) -> str:
     """Helper function to dynamically wrap title/variants into valid issue HTML."""
     variant_html = (
@@ -22,7 +22,7 @@ def make_mock_issue_html(
                     <a href="#">{title} {variant_html}</a>
                 </div>
                 <div class="details">
-                    <span class="date" data-date="{release_epoch}">Jul 29th, 2026</span>
+                    <span class="date" data-date="{foc_epoch}">Jul 29th, 2026</span>
                     <span class="price">&nbsp;·&nbsp; $4.99</span>
                 </div>
             </li>

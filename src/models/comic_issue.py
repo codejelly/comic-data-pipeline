@@ -12,5 +12,5 @@ class ComicIssueSchema(BaseModel):
     retail_price: Optional[float] = Field(default=None, ge=0)
     image_url: Optional[HttpUrl] = None
     current_pull_count: int = Field(default=0, ge=0)
-    days_to_street_date: Optional[int] = None
-    street_date: Optional[str] = None  # Accepts "YYYY-MM-DD" or None
+    days_to_foc: Optional[int] = None
+    foc_date: Optional[str] = None  # Accepts "YYYY-MM-DD" or None
