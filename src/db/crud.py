@@ -335,3 +335,58 @@ def upsert_velocity_flags(
 
     db_session.flush()
     return flags
+
+
+def fetch_cover_a_missing_series(
+    db_session: Session,
+    *,
+    limit: int | None = None,
+) -> list[dict[str, Any]]:
+    """Cover A variants whose master still has no LOCG series_id."""
+    query = (
+        db_session.query(IssueVariant, IssueMaster)
+        .join(IssueMaster, IssueVariant.master_issue_id == IssueMaster.master_issue_id)
+        .filter(
+            IssueMaster.series_id.is_(None),
+            # Cover A / primary base: no LOCG parent (stored only at harvest;
+            # DB uses variant_type when parent isn't persisted)
+            IssueVariant.variant_type.in_(
+                ("COVER_A", "STANDARD_MAIN_ISSUE", "MAIN_RELEASE")
+            ),
+        )
+        .order_by(IssueVariant.locg_issue_id.asc())
+    )
+    if limit is not None:
+        query = query.limit(limit)
+
+    rows = []
+    for variant, master in query.all():
+        rows.append(
+            {
+                "locg_issue_id": variant.locg_issue_id,
+                "master_issue_id": master.master_issue_id,
+                "variant_type": variant.variant_type,
+                "issue_number": master.issue_number,
+                "publisher": master.publisher,
+            }
+        )
+    return rows
+
+
+def update_master_series_id(
+    db_session: Session,
+    master_issue_id: int,
+    series_id: int,
+) -> IssueMaster:
+    """Set series_id on a master after Cover A issue-page enrichment."""
+    master = (
+        db_session.query(IssueMaster)
+        .filter_by(master_issue_id=master_issue_id)
+        .one_or_none()
+    )
+    if master is None:
+        raise ValueError(f"No issue_master row for master_issue_id={master_issue_id}")
+
+    master.series_id = int(series_id)
+    db_session.flush()
+    return master
