@@ -8,12 +8,12 @@
 -- --------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS issue_master (
     master_issue_id    SERIAL PRIMARY KEY,
-    series_id          INTEGER NOT NULL,
+    series_id          INTEGER,              -- NULL until weekly Cover A enrichment from /comics/series/{id}
     issue_number       VARCHAR(100) NOT NULL,
     sort_order         NUMERIC(8, 2) NOT NULL,
     type               VARCHAR(40) NOT NULL DEFAULT 'MAIN_RELEASE',
-    status             VARCHAR(30) NOT NULL DEFAULT 'UPCOMING',
-    street_date        DATE NOT NULL,
+    status             VARCHAR(30) NOT NULL DEFAULT 'PRE_FOC', -- PRE_FOC | FOC_DATE | POST_FOC_DATE
+    foc_date           DATE NOT NULL,        -- Final Order Cutoff from list-item span.date
     publisher          VARCHAR(100) NOT NULL DEFAULT 'Unknown',
     created_at         TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at         TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS issue_master (
     CONSTRAINT unique_series_release UNIQUE (series_id, sort_order)
 );
 
-CREATE INDEX IF NOT EXISTS idx_master_street_date ON issue_master(street_date);
+CREATE INDEX IF NOT EXISTS idx_master_foc_date ON issue_master(foc_date);
 CREATE INDEX IF NOT EXISTS idx_master_publisher ON issue_master(publisher);
 
 -- --------------------------------------------------------------------
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS issue_variants (
     retail_price        NUMERIC(6, 2),           
     image_url           TEXT,                    
     current_pull_count  INTEGER NOT NULL DEFAULT 0,
-    days_to_street_date INTEGER NOT NULL,    
+    days_to_foc         INTEGER NOT NULL,        -- days until FOC (foc_date - today)
     created_at          TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at          TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS issue_snapshots (
     snapshot_id         BIGSERIAL PRIMARY KEY,
     locg_issue_id       INTEGER NOT NULL,
     pull_count          INTEGER NOT NULL,
-    days_to_street_date INTEGER NOT NULL,
+    days_to_foc         INTEGER NOT NULL,
     recorded_at         TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_snapshot_variant 

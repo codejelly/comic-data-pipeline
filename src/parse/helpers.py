@@ -73,7 +73,8 @@ def parse_sort_order(record: dict[str, Any]) -> Decimal:
 
     Standard issues parse to exact decimals (e.g., 1.00, 2.50).
     Unnumbered specials/annuals map to 9000.00+ with a unique modulo offset
-    based on locg_issue_id to prevent UNIQUE(series_id, sort_order) collisions.
+    based on locg_issue_id so pending (NULL series_id) rows stay distinguishable
+    once a real series_id is written and UNIQUE(series_id, sort_order) applies.
     """
     raw_sort = record.get("sort_order")
     if raw_sort is not None and str(raw_sort).strip():

@@ -1,44 +1,44 @@
 import logging
-from typing import List, Optional
+from typing import List
 
 
 def run_ingestion_pipeline(
-    release_dates: List[str], base_url: str, force_refresh: bool = False
+    foc_weeks: List[str], base_url: str, force_refresh: bool = False
 ) -> None:
     """
-    Universal ingestion runner. Processes any list of release dates,
-    whether it contains 1 date or 100 dates.
+    Universal ingestion runner. Processes any list of FOC week keys,
+    whether it contains 1 week or 100 weeks.
     """
-    if not release_dates:
-        logging.warning("No release dates provided to ingestion pipeline.")
+    if not foc_weeks:
+        logging.warning("No FOC weeks provided to ingestion pipeline.")
         return
 
-    logging.info(f"Starting ingestion pipeline for {len(release_dates)} week(s)...")
+    logging.info(f"Starting ingestion pipeline for {len(foc_weeks)} FOC week(s)...")
 
     driver = setup_headless_driver()
 
     try:
-        for release_date in release_dates:
+        for foc_week in foc_weeks:
             try:
                 # 1. Fetch DOM (respects force_refresh & local caching)
                 raw_html = fetch_and_cache_week(
                     driver=driver,
-                    release_date=release_date,
+                    foc_week=foc_week,
                     base_url=base_url,
                     force_refresh=force_refresh,
                 )
 
-                # 2. Parse raw HTML
-                parsed_books = parse_html_data(raw_html, release_date)
+                # 2. Parse raw HTML (per-book foc_date comes from list-item DOM)
+                parsed_books = parse_html_data(raw_html, foc_week)
 
                 # 3. Upsert to DB
                 upsert_books_to_db(parsed_books)
 
-                logging.info(f" Successfully processed release date: {release_date}")
+                logging.info(f" Successfully processed FOC week: {foc_week}")
 
             except Exception as e:
-                logging.error(f" Failed processing week {release_date}: {e}")
-                # Continue with remaining dates in batch if one fails
+                logging.error(f" Failed processing FOC week {foc_week}: {e}")
+                # Continue with remaining weeks in batch if one fails
                 continue
 
     finally:

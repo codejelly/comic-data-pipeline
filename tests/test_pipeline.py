@@ -24,12 +24,12 @@ def mock_db():
     cursor.execute("""
         CREATE TABLE issue_master (
             master_issue_id    INTEGER PRIMARY KEY AUTOINCREMENT,
-            series_id          INTEGER NOT NULL,
+            series_id          INTEGER,
             issue_number       VARCHAR(20) NOT NULL,
             sort_order         REAL NOT NULL,
             type               VARCHAR(30) NOT NULL,
             status             VARCHAR(20) NOT NULL,
-            street_date        TEXT NOT NULL,
+            foc_date        TEXT NOT NULL,
             publisher          VARCHAR(100) NOT NULL
         );
     """)
@@ -44,7 +44,7 @@ def mock_db():
             retail_price        REAL,
             image_url           TEXT,
             current_pull_count  INTEGER DEFAULT 0,
-            days_to_street_date INTEGER NOT NULL,
+            days_to_foc INTEGER NOT NULL,
             FOREIGN KEY (master_issue_id) REFERENCES issue_master(master_issue_id) ON DELETE CASCADE
         );
     """)
@@ -58,16 +58,16 @@ def test_pipeline_classification_and_cascade_logic(mock_db):
 
     today_utc = datetime.now(timezone.utc)
     future_epoch_seconds = int(today_utc.timestamp() + (7 * 86400))
-    street_datetime = datetime.fromtimestamp(future_epoch_seconds, tz=timezone.utc)
+    foc_datetime = datetime.fromtimestamp(future_epoch_seconds, tz=timezone.utc)
 
-    iso_release_date = street_datetime.date().isoformat()
+    iso_foc_date = foc_datetime.date().isoformat()
 
     cursor.execute(
         """
-        INSERT INTO issue_master (series_id, issue_number, sort_order, type, status, street_date, publisher)
-        VALUES (11, 'Avengers: Armageddon #2', 2.0, 'MAIN_RELEASE', 'RELEASED', ?, 'Marvel Comics')
+        INSERT INTO issue_master (series_id, issue_number, sort_order, type, status, foc_date, publisher)
+        VALUES (11, 'Avengers: Armageddon #2', 2.0, 'MAIN_RELEASE', 'POST_FOC_DATE', ?, 'Marvel Comics')
     """,
-        (iso_release_date,),
+        (iso_foc_date,),
     )
     parent_id = cursor.lastrowid
 
@@ -76,13 +76,13 @@ def test_pipeline_classification_and_cascade_logic(mock_db):
     mock_meta = {"format": "comic", "variant_type": raw_cover_text}
     assigned_tier = dynamic_issue_classifier(mock_meta, raw_title)
 
-    calculated_days_delta = (street_datetime.date() - today_utc.date()).days
+    calculated_days_delta = (foc_datetime.date() - today_utc.date()).days
 
     cursor.execute(
         """
         INSERT INTO issue_variants (
             master_issue_id, locg_issue_id, variant_type, cover_info,
-            retail_price, image_url, current_pull_count, days_to_street_date
+            retail_price, image_url, current_pull_count, days_to_foc
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     """,
         (
@@ -99,12 +99,12 @@ def test_pipeline_classification_and_cascade_logic(mock_db):
     mock_db.commit()
 
     cursor.execute(
-        "SELECT publisher, street_date FROM issue_master WHERE master_issue_id = ?",
+        "SELECT publisher, foc_date FROM issue_master WHERE master_issue_id = ?",
         (parent_id,),
     )
     row = cursor.fetchone()
     assert row[0] == "Marvel Comics"
-    assert row[1] == iso_release_date
+    assert row[1] == iso_foc_date
 
     cursor.execute("DELETE FROM issue_master WHERE master_issue_id = ?", (parent_id,))
     mock_db.commit()
@@ -153,5 +153,5 @@ def test_harvester_full_extraction_behavior():
     )
     assert rec["current_pull_count"] == 10408
 
-    assert rec["release_date"] == "2026-07-15"
-    assert isinstance(rec["days_to_street_date"], int)
+    assert rec["foc_date"] == "2026-07-15"
+    assert isinstance(rec["days_to_foc"], int)

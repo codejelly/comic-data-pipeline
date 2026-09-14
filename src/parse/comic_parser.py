@@ -68,10 +68,10 @@ def parse_comic_harvester_loop(html_content: str) -> list[dict[str, Any]]:
                     retail_price = float(match.group())
 
         # -------------------------------------------------------------
-        # 2. DATE & VELOCITY EXTRACTION
+        # 2. FOC DATE & DAYS-TO-FOC EXTRACTION
         # -------------------------------------------------------------
-        release_date = None
-        days_to_street_date = None
+        foc_date = None
+        days_to_foc = None
 
         if details_div:
             date_span = details_div.find("span", class_="date")
@@ -82,23 +82,23 @@ def parse_comic_harvester_loop(html_content: str) -> list[dict[str, Any]]:
                 if raw_epoch_attr:
                     try:
                         raw_epoch = int(raw_epoch_attr)
-                        street_datetime = datetime.fromtimestamp(
+                        foc_datetime = datetime.fromtimestamp(
                             raw_epoch, tz=timezone.utc
                         )
-                        street_date_obj = street_datetime.date()
+                        foc_date_obj = foc_datetime.date()
 
-                        release_date = street_date_obj.isoformat()
+                        foc_date = foc_date_obj.isoformat()
 
                         today_utc_date = datetime.now(timezone.utc).date()
-                        days_to_street_date = (street_date_obj - today_utc_date).days
+                        days_to_foc = (foc_date_obj - today_utc_date).days
                     except (ValueError, TypeError):
-                        release_date = None
-                        days_to_street_date = None
+                        foc_date = None
+                        days_to_foc = None
 
-                if not release_date:
+                if not foc_date:
                     raw_text_date = date_span.text.strip()
                     if raw_text_date:
-                        release_date = raw_text_date
+                        foc_date = raw_text_date
 
         # -------------------------------------------------------------------------
         # 3. THE TITLE BRANCH: MAIN SERIES NAME & VERBOSE COVER DECOUPLE
@@ -200,8 +200,8 @@ def parse_comic_harvester_loop(html_content: str) -> list[dict[str, Any]]:
                 "retail_price": retail_price,
                 "image_url": image_url,
                 "current_pull_count": current_pull_count,
-                "days_to_street_date": days_to_street_date,
-                "release_date": release_date,
+                "days_to_foc": days_to_foc,
+                "foc_date": foc_date,
                 "is_primary_base_issue_one": is_primary_base_one,
             }
         )

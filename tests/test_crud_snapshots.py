@@ -1,8 +1,9 @@
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 
 from src.db.crud import (
     append_issue_snapshot,
+    determine_foc_status,
     fetch_recent_snapshots,
     upsert_master_issue,
     upsert_velocity_flags,
@@ -27,6 +28,86 @@ def test_parse_sort_order_extracts_issue_number_from_title():
     assert parse_issue_number({"main_title": "Spawn HC Vol. 1"}) == "Special / Unnumbered"
 
 
+def test_determine_foc_status_from_foc_date():
+    assert determine_foc_status(date(2026, 9, 20), as_of=date(2026, 9, 13)) == (
+        "PRE_FOC"
+    )
+    assert determine_foc_status(date(2026, 9, 13), as_of=date(2026, 9, 13)) == (
+        "FOC_DATE"
+    )
+    assert determine_foc_status(date(2026, 9, 1), as_of=date(2026, 9, 13)) == (
+        "POST_FOC_DATE"
+    )
+
+
+def test_upsert_sets_status_from_foc_date(db_session):
+    pre = upsert_master_issue(
+        db_session,
+        {
+            "locg_issue_id": 8001,
+            "parent_id": 0,
+            "main_title": "Pre FOC Book #1",
+            "publisher": "Image Comics",
+            "assigned_tier": "COVER_A",
+            "current_pull_count": 100,
+            "days_to_foc": 30,
+            "foc_date": "2099-01-15",
+        },
+    )
+    pre_master = (
+        db_session.query(IssueMaster)
+        .filter_by(master_issue_id=pre.master_issue_id)
+        .one()
+    )
+    assert pre_master.foc_date == date(2099, 1, 15)
+    assert pre_master.status == "PRE_FOC"
+
+    post = upsert_master_issue(
+        db_session,
+        {
+            "locg_issue_id": 8002,
+            "parent_id": 0,
+            "main_title": "Post FOC Book #1",
+            "publisher": "Image Comics",
+            "assigned_tier": "COVER_A",
+            "current_pull_count": 100,
+            "days_to_foc": -10,
+            "foc_date": "2020-01-15",
+        },
+    )
+    post_master = (
+        db_session.query(IssueMaster)
+        .filter_by(master_issue_id=post.master_issue_id)
+        .one()
+    )
+    assert post_master.status == "POST_FOC_DATE"
+
+
+def test_upsert_master_issue_leaves_series_id_null_until_enrichment(db_session):
+    """Weekly list scrape has no LOCG series id — store NULL, not locg_issue_id."""
+    variant = upsert_master_issue(
+        db_session,
+        {
+            "locg_issue_id": 7056380,
+            "parent_id": 0,
+            "main_title": "Clayface: Celebrity Dirt #3",
+            "publisher": "DC Comics",
+            "assigned_tier": "COVER_A",
+            "current_pull_count": 6174,
+            "days_to_foc": 0,
+            "foc_date": "2026-09-09",
+        },
+    )
+    master = (
+        db_session.query(IssueMaster)
+        .filter_by(master_issue_id=variant.master_issue_id)
+        .one()
+    )
+    assert master.series_id is None
+    assert master.issue_number == "#3"
+    assert master.foc_date == date(2026, 9, 9)
+
+
 def test_upsert_master_issue_and_snapshots(db_session):
     record = {
         "locg_issue_id": 5001,
@@ -37,8 +118,8 @@ def test_upsert_master_issue_and_snapshots(db_session):
         "retail_price": 3.99,
         "is_primary_base_issue_one": True,
         "current_pull_count": 1200,
-        "days_to_street_date": 5,
-        "release_date": "2026-09-02",
+        "days_to_foc": 5,
+        "foc_date": "2026-09-02",
         "series_id": 42,
         "sort_order": 1.0,
     }
@@ -65,7 +146,7 @@ def test_upsert_master_issue_and_snapshots(db_session):
     snapshots = db_session.query(IssueSnapshot).filter_by(locg_issue_id=5001).all()
     assert len(snapshots) == 1
     assert snapshots[0].pull_count == 1200
-    assert snapshots[0].days_to_street_date == 5
+    assert snapshots[0].days_to_foc == 5
 
 
 def test_fetch_recent_snapshots_chronological_order(db_session):
@@ -82,8 +163,8 @@ def test_fetch_recent_snapshots_chronological_order(db_session):
             "publisher": "Image Comics",
             "assigned_tier": "COVER_A",
             "current_pull_count": 100,
-            "days_to_street_date": 10,
-            "release_date": "2026-09-10",
+            "days_to_foc": 10,
+            "foc_date": "2026-09-10",
             "series_id": 99,
             "sort_order": 1.0,
         },
@@ -95,7 +176,7 @@ def test_fetch_recent_snapshots_chronological_order(db_session):
             IssueSnapshot(
                 locg_issue_id=locg_id,
                 pull_count=100 + (day * 20),
-                days_to_street_date=10 - day,
+                days_to_foc=10 - day,
                 recorded_at=base_time - timedelta(days=5 - day),
             )
         )
@@ -120,8 +201,8 @@ def test_upsert_velocity_flags(db_session):
             "publisher": "Marvel Comics",
             "assigned_tier": "COVER_A",
             "current_pull_count": 1500,
-            "days_to_street_date": 3,
-            "release_date": "2026-09-15",
+            "days_to_foc": 3,
+            "foc_date": "2026-09-15",
             "series_id": 7,
             "sort_order": 1.0,
         },

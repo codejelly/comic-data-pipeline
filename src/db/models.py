@@ -30,12 +30,12 @@ class IssueMaster(Base):
     )
 
     master_issue_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    series_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    series_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)  # noqa: UP045
     issue_number: Mapped[str] = mapped_column(String(100), nullable=False)
     sort_order: Mapped[Decimal] = mapped_column(Numeric(8, 2), nullable=False)
     type: Mapped[str] = mapped_column(String(40), nullable=False, default="MAIN_RELEASE")
-    status: Mapped[str] = mapped_column(String(30), nullable=False, default="UPCOMING")
-    street_date: Mapped[date] = mapped_column(Date, nullable=False)
+    status: Mapped[str] = mapped_column(String(30), nullable=False, default="PRE_FOC")
+    foc_date: Mapped[date] = mapped_column(Date, nullable=False)
     publisher: Mapped[str] = mapped_column(String(100), nullable=False, default="Unknown")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
@@ -64,7 +64,7 @@ class IssueVariant(Base):
     retail_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(6, 2), nullable=True)  # noqa: UP045
     image_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # noqa: UP045
     current_pull_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    days_to_street_date: Mapped[int] = mapped_column(Integer, nullable=False)
+    days_to_foc: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -91,7 +91,7 @@ class IssueSnapshot(Base):
         nullable=False,
     )
     pull_count: Mapped[int] = mapped_column(Integer, nullable=False)
-    days_to_street_date: Mapped[int] = mapped_column(Integer, nullable=False)
+    days_to_foc: Mapped[int] = mapped_column(Integer, nullable=False)
     recorded_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

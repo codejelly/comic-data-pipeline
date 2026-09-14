@@ -14,31 +14,36 @@ CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 def fetch_and_cache_week(
     driver: webdriver.Chrome,
-    release_date: str,
+    foc_week: str,
     base_url: str,
     force_refresh: bool = True,
     timeout: int = 15,
 ) -> str:
     """
-    Fetches raw HTML for a specific comic release date using Selenium.
+    Fetches raw HTML for a specific FOC week list using Selenium.
 
     - If force_refresh is False and a cached file exists, reads from disk.
     - If force_refresh is True (e.g. nightly cron) or no cache exists, fetches live DOM
       via Selenium and overwrites the local HTML cache file.
+
+    foc_week: calendar key for the FOC list week (YYYY-MM-DD or YYYY/MM/DD).
+    Note: LOCG's query string still uses the param name ``release_date``; the value
+    is the FOC week we are harvesting.
     """
-    cache_file = CACHE_DIR / f"week_{release_date}.html"
+    cache_key = foc_week.replace("/", "-")
+    cache_file = CACHE_DIR / f"foc_week_{cache_key}.html"
 
     # 1. Respect local cache if force_refresh is False
     if cache_file.exists() and not force_refresh:
         logging.info(
-            f"[{release_date}] Reading raw HTML from local cache ({cache_file.name})."
+            f"[{foc_week}] Reading raw HTML from local cache ({cache_file.name})."
         )
         return cache_file.read_text(encoding="utf-8")
 
-    # 2. Construct the date-specific URL
-    target_url = f"{base_url}?release_date={release_date}"
+    # 2. Construct the FOC-week URL (LOCG query param name is external)
+    target_url = f"{base_url}?release_date={foc_week}"
     logging.info(
-        f"[{release_date}] Fetching live DOM via Selenium (force_refresh={force_refresh})..."
+        f"[{foc_week}] Fetching live DOM via Selenium (force_refresh={force_refresh})..."
     )
 
     try:
@@ -54,20 +59,20 @@ def fetch_and_cache_week(
 
         # Save or overwrite raw HTML snapshot on disk
         cache_file.write_text(raw_html, encoding="utf-8")
-        logging.info(f"[{release_date}] Successfully cached HTML snapshot to disk.")
+        logging.info(f"[{foc_week}] Successfully cached HTML snapshot to disk.")
 
         return raw_html
 
     except TimeoutException:
         logging.error(
-            f"[{release_date}] Timed out waiting for .comic-list-item at {target_url}"
+            f"[{foc_week}] Timed out waiting for .comic-list-item at {target_url}"
         )
         raise
     except WebDriverException as e:
         logging.error(
-            f"[{release_date}] Selenium error while loading {target_url}: {e}"
+            f"[{foc_week}] Selenium error while loading {target_url}: {e}"
         )
         raise
     except Exception as e:
-        logging.error(f"[{release_date}] Unexpected error during fetch: {e}")
+        logging.error(f"[{foc_week}] Unexpected error during fetch: {e}")
         raise
